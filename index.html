@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Recipes</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f7f5f0; min-height: 100vh; color: #2c2c2a; }
+
+header { background: #fff; border-bottom: 1px solid #e8e5df; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.logo { font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.tab-bar { display: flex; gap: 4px; background: #f0ede7; padding: 4px; border-radius: 10px; }
+.tab-btn { padding: 6px 16px; border: none; border-radius: 7px; background: transparent; font-size: 13px; font-weight: 500; color: #888; cursor: pointer; transition: all 0.15s; }
+.tab-btn.active { background: #fff; color: #2c2c2a; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+.main { max-width: 720px; margin: 0 auto; padding: 1.5rem; }
+.view { display: none; }
+.view.active { display: block; }
+
+.recipe-card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.07); position: relative; }
+.card-header { padding: 1.5rem 1.5rem 1rem; border-bottom: 1px solid #f0ede7; padding-right: 4rem; }
+.category-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; margin-bottom: 10px; }
+.badge-chicken { background: #FFF3E0; color: #E65100; }
+.badge-seafood { background: #E3F2FD; color: #1565C0; }
+.badge-pasta   { background: #F3E5F5; color: #6A1B9A; }
+.badge-bowl    { background: #E8F5E9; color: #2E7D32; }
+.recipe-title { font-size: 1.45rem; font-weight: 700; line-height: 1.25; margin-bottom: 10px; }
+.recipe-meta { display: flex; gap: 14px; font-size: 13px; color: #999; flex-wrap: wrap; align-items: center; }
+.meta-cal { background: #FFF8E1; color: #E65100; font-weight: 600; font-size: 12px; padding: 3px 9px; border-radius: 20px; }
+
+.heart-btn { position: absolute; top: 1.25rem; right: 1.25rem; width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid #e8e5df; background: #fff; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.heart-btn:hover { border-color: #e57373; background: #fff5f5; }
+.heart-btn.saved { border-color: #e57373; background: #fff5f5; }
+
+.card-body { padding: 1.25rem 1.5rem; }
+.section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #bbb; margin-bottom: 10px; }
+.ingredients-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-bottom: 1.25rem; }
+.ingredient-item { display: flex; align-items: flex-start; gap: 7px; font-size: 13.5px; color: #444; line-height: 1.4; }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: #d0ccc8; margin-top: 5px; flex-shrink: 0; }
+.steps-list { list-style: none; }
+.step { display: flex; gap: 12px; margin-bottom: 12px; font-size: 13.5px; line-height: 1.6; color: #444; }
+.step-num { width: 24px; height: 24px; border-radius: 50%; background: #f0ede7; color: #777; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+.div-line { border: none; border-top: 1px solid #f0ede7; margin: 1.1rem 0; }
+
+.card-footer { padding: 0.9rem 1.5rem; background: #faf9f7; border-top: 1px solid #f0ede7; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.chol-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+.recipe-link { font-size: 13px; color: #1565C0; text-decoration: none; font-weight: 500; }
+.recipe-link:hover { text-decoration: underline; }
+
+.nav-row { display: flex; align-items: center; justify-content: space-between; margin-top: 1.25rem; gap: 8px; }
+.nav-btn { display: flex; align-items: center; gap: 5px; padding: 9px 18px; border: 1.5px solid #e0ddd8; border-radius: 50px; background: #fff; font-size: 13px; font-weight: 500; color: #555; cursor: pointer; transition: all 0.15s; }
+.nav-btn:hover:not(:disabled) { background: #f0ede7; }
+.nav-btn:disabled { opacity: 0.3; cursor: default; }
+.pass-btn { padding: 9px 22px; border: 1.5px solid #ffcdd2; border-radius: 50px; background: #fff5f5; font-size: 13px; font-weight: 600; color: #c62828; cursor: pointer; transition: all 0.15s; }
+.pass-btn:hover { background: #ffebee; }
+
+.status-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; min-height: 22px; }
+.spinner { width: 12px; height: 12px; border: 1.5px solid #e0ddd8; border-top-color: #999; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.status-text { font-size: 12px; color: #bbb; }
+
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #2c2c2a; color: #fff; font-size: 13px; font-weight: 500; padding: 10px 20px; border-radius: 50px; opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap; z-index: 999; }
+.toast.show { opacity: 1; }
+
+.cooldown-notice { background: #fff8e1; border: 1px solid #ffe082; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #e65100; margin-top: 10px; text-align: center; display: none; }
+
+.api-warning { background: #fff3e0; border: 1px solid #ffcc80; border-radius: 12px; padding: 14px 16px; margin-bottom: 1rem; font-size: 13px; color: #e65100; display: none; }
+.api-warning a { color: #1565C0; }
+
+.saved-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.saved-card { background: #fff; border-radius: 14px; padding: 0.9rem 1rem; border: 1px solid #f0ede7; display: flex; flex-direction: column; gap: 5px; }
+.saved-card-title { font-size: 14.5px; font-weight: 600; line-height: 1.3; }
+.saved-card-meta { font-size: 12px; color: #bbb; }
+.saved-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+.remove-btn { font-size: 11px; color: #e57373; background: none; border: none; cursor: pointer; font-weight: 500; }
+.view-btn { font-size: 12px; color: #888; background: none; border: none; cursor: pointer; font-weight: 500; }
+
+.empty { text-align: center; padding: 3rem 1rem; color: #bbb; }
+.empty .icon { font-size: 2.5rem; margin-bottom: 10px; }
+.empty p { font-size: 14px; line-height: 1.6; }
+
+.passed-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.passed-pill { background: #f0ede7; border-radius: 8px; padding: 8px 10px; font-size: 12px; color: #777; display: flex; flex-direction: column; gap: 4px; }
+.passed-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.passed-meta { display: flex; justify-content: space-between; align-items: center; }
+.passed-days { font-size: 11px; color: #bbb; }
+.unpass-btn { font-size: 11px; color: #bbb; background: none; border: none; cursor: pointer; padding: 0; }
+.unpass-btn:hover { color: #e57373; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🍽️ My Recipes</div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-browse" onclick="switchTab('browse', this)">Browse</button>
+    <button class="tab-btn" id="tab-saved" onclick="switchTab('saved', this)">Saved <span id="saved-badge"></span></button>
+    <button class="tab-btn" id="tab-passed" onclick="switchTab('passed', this)">Passed</button>
+  </div>
+</header>
+
+<div class="main">
+  <div id="view-browse" class="view active">
+    <div class="api-warning" id="api-warning">
+      ⚠️ No API key set — AI generation is off. Add your key to <strong>.env</strong> and restart.
+      Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>.
+    </div>
+    <div class="recipe-card" id="card">
+      <div style="padding:3.5rem 2rem;text-align:center;color:#bbb;">
+        <div class="spinner" style="width:28px;height:28px;border-width:2.5px;display:block;margin:0 auto 14px;"></div>
+        <p style="font-size:14px;">Loading your first recipe…</p>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="nav-btn" id="prev-btn" onclick="showPrev()" disabled>← Prev</button>
+      <button class="pass-btn" onclick="passRecipe()">Pass 👋</button>
+      <button class="nav-btn" onclick="showNext()">Next →</button>
+    </div>
+    <div class="status-row" id="status-row"></div>
+    <div class="cooldown-notice" id="cooldown-notice"></div>
+  </div>
+
+  <div id="view-saved" class="view">
+    <div id="saved-container"></div>
+  </div>
+
+  <div id="view-passed" class="view">
+    <div id="passed-container"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SEEDS = [
+  // ── ORIGINAL RECIPES ──────────────────────────────────────────────────────
+  {title:"Blackened Tilapia Tacos",category:"Seafood",badge:"badge-seafood",time:"25 min",servings:"2",cholesterol:"Heart-friendly",calories:"~370 per serving",ingredients:["2 tilapia fillets","1 tbsp smoked paprika","1 tsp garlic powder","1 tsp cumin","½ tsp cayenne pepper","½ tsp dried oregano","1 tbsp olive oil","4 small flour tortillas","1 cup shredded cabbage","2 tbsp plain Greek yogurt","1 lime, juiced","Fresh cilantro"],steps:["Mix paprika, garlic powder, cumin, cayenne, oregano, salt & pepper.","Pat tilapia dry and coat both sides with the spice mix.","Heat olive oil over medium-high. Cook tilapia 3–4 min per side until blackened and flaky.","Mix Greek yogurt with lime juice for the sauce.","Warm tortillas. Break fish into chunks.","Load tortillas with fish, cabbage, yogurt sauce, and cilantro."],link:"https://www.halfbakedharvest.com/blackened-fish-tacos/",linkLabel:"Half Baked Harvest"},
+  {title:"One Pot Chicken & Rice",category:"Chicken",badge:"badge-chicken",time:"45 min",servings:"4",cholesterol:"Heart-friendly",calories:"~450 per serving",ingredients:["4 bone-in chicken thighs","1½ cups long grain rice","3 cups low-sodium chicken broth","4 garlic cloves, minced","1 small onion, diced","1 tsp smoked paprika","1 tsp dried thyme","1 tbsp olive oil","Fresh parsley"],steps:["Season chicken with paprika, thyme, salt, and pepper.","Sear chicken skin-side down 4–5 min until golden. Flip 3 more min. Remove.","Sauté onion 3 min. Add garlic 1 min. Add rice and stir to coat.","Pour in broth and bring to a boil. Nestle chicken on top.","Cover, reduce to low, cook 22–25 min.","Rest 5 min. Fluff rice and garnish with parsley."],link:"https://www.recipetineats.com/one-pot-chicken-and-rice/",linkLabel:"RecipeTin Eats"},
+  {title:"Shrimp Taco Bowl",category:"Bowl",badge:"badge-bowl",time:"30 min",servings:"2",cholesterol:"High-fiber",calories:"~420 per serving",ingredients:["1 lb large shrimp, peeled","1 cup cooked brown rice","1 can black beans, rinsed","1 cup broccoli florets","3 garlic cloves, minced","1 tsp chili powder","1 tsp cumin","½ tsp smoked paprika","1 tbsp olive oil","1 lime","Store-bought salsa"],steps:["Steam broccoli 3–4 min. Set aside.","Toss shrimp with chili powder, cumin, paprika, salt & pepper.","Heat oil. Sauté garlic 30 sec. Add shrimp, cook 1–2 min per side.","Warm black beans with a pinch of cumin.","Build bowl: rice, beans, broccoli, shrimp.","Squeeze lime and add salsa."],link:"https://www.skinnytaste.com/shrimp-taco-bowls/",linkLabel:"Skinnytaste"},
+  {title:"Garlic Butter Shrimp Pasta",category:"Pasta",badge:"badge-pasta",time:"25 min",servings:"3",cholesterol:"Moderate",calories:"~480 per serving",ingredients:["1 lb shrimp, peeled","8 oz linguine","5 garlic cloves, minced","2 tbsp olive oil","1 tbsp butter","¼ tsp red pepper flakes","½ cup low-sodium chicken broth","1 lemon, zested & juiced","Fresh parsley","Light Parmesan"],steps:["Cook pasta. Reserve ½ cup pasta water.","Season shrimp with salt, pepper, red pepper flakes. Sear 1–2 min per side. Remove.","Add butter and garlic to pan, sauté 1 min.","Add broth and lemon juice, simmer 2 min.","Toss pasta in pan with pasta water. Return shrimp, add lemon zest and parsley."],link:"https://damndelicious.net/2014/04/19/shrimp-scampi/",linkLabel:"Damn Delicious"},
+  {title:"Lemon Herb Baked Cod",category:"Seafood",badge:"badge-seafood",time:"25 min",servings:"2",cholesterol:"Heart-friendly",calories:"~290 per serving",ingredients:["2 cod fillets (6 oz each)","3 garlic cloves, minced","1 lemon, sliced + juiced","1 tbsp olive oil","1 tsp dried oregano","1 tsp dried thyme","2 cups cauliflower florets","Fresh parsley"],steps:["Preheat oven to 400°F. Toss cauliflower with oil, salt, pepper on a baking sheet.","Nestle cod among cauliflower. Spoon garlic, lemon juice, and herbs over fish.","Lay lemon slices on top.","Bake 18–22 min until fish flakes easily and cauliflower is golden.","Garnish with parsley."],link:"https://www.wellplated.com/baked-cod/",linkLabel:"Well Plated"},
+  {title:"Chicken Thighs Over Rice Platter",category:"Chicken",badge:"badge-chicken",time:"40 min",servings:"4",cholesterol:"Heart-friendly",calories:"~480 per serving",ingredients:["4 boneless skinless chicken thighs","2 cups basmati rice, cooked","1 tsp cumin","1 tsp coriander","1 tsp paprika","½ tsp turmeric","4 garlic cloves, minced","2 tbsp olive oil","1 lemon","Cucumber, tomato, fresh parsley"],steps:["Mix cumin, coriander, paprika, turmeric, garlic, olive oil, salt & pepper. Coat chicken. Marinate 15 min.","Cook chicken 5–6 min per side until charred through. Rest and slice.","Pile rice on a plate, top with sliced chicken.","Squeeze lemon over everything.","Serve with diced cucumber, tomato, and fresh herbs."],link:"https://www.halfbakedharvest.com/chicken-shawarma-rice-bowls/",linkLabel:"Half Baked Harvest"},
+  {title:"Seared Scallops with Cauliflower Purée",category:"Seafood",badge:"badge-seafood",time:"30 min",servings:"2",cholesterol:"Heart-friendly",calories:"~320 per serving",ingredients:["12 large dry sea scallops","1 head cauliflower, cut into florets","3 garlic cloves","2 tbsp olive oil","1 tbsp butter","¼ cup low-fat milk","Fresh lemon","Fresh chives"],steps:["Boil cauliflower and garlic until very tender, ~12 min. Drain and blend with milk, 1 tbsp olive oil, salt & pepper.","Pat scallops completely dry. Season with salt & pepper.","Heat remaining oil over HIGH until almost smoking. Sear scallops 2 min without touching.","Flip, add butter, baste 1 min.","Spoon purée onto plates. Top with scallops, lemon squeeze, and chives."],link:"https://www.recipetineats.com/pan-seared-scallops/",linkLabel:"RecipeTin Eats"},
+  {title:"Chicken Chickpea Mediterranean Bowl",category:"Bowl",badge:"badge-bowl",time:"35 min",servings:"3",cholesterol:"High-fiber",calories:"~510 per serving",ingredients:["3 boneless chicken thighs","1 can chickpeas, rinsed","1 cup cherry tomatoes, halved","1 cucumber, diced","2 tbsp olive oil","2 tsp dried oregano","1 tsp garlic powder","1 lemon","2 cups cooked brown rice","Light feta crumble"],steps:["Season chicken with oregano, garlic powder, salt & pepper. Cook 5–6 min per side. Rest and slice.","Toast chickpeas in same pan with paprika until crispy, 3–4 min.","Toss tomatoes and cucumber with lemon juice, olive oil, salt.","Build bowls: rice, sliced chicken, crispy chickpeas, tomato salad.","Top with light feta and extra lemon."],link:"https://www.skinnytaste.com/greek-chicken-bowls/",linkLabel:"Skinnytaste"},
+  {title:"Shrimp & Broccoli Stir Fry",category:"Seafood",badge:"badge-seafood",time:"20 min",servings:"2",cholesterol:"Heart-friendly",calories:"~340 per serving",ingredients:["1 lb shrimp, peeled","2 cups broccoli florets","4 garlic cloves, minced","1 tbsp fresh ginger, grated","2 tbsp low-sodium soy sauce","1 tbsp sesame oil","1 tsp cornstarch + 2 tbsp water","1 tbsp olive oil","Red pepper flakes","Steamed rice"],steps:["Whisk soy sauce, sesame oil, cornstarch-water, red pepper flakes.","Blanch broccoli in boiling salted water 2 min. Drain.","Heat oil in a wok over HIGH. Add garlic and ginger, stir fry 30 seconds.","Add shrimp, cook 1 min per side. Add broccoli and sauce. Toss 1–2 min.","Serve immediately over rice."],link:"https://damndelicious.net/2014/11/14/shrimp-broccoli/",linkLabel:"Damn Delicious"},
+  {title:"Easy Chicken Pot Pie Skillet",category:"Chicken",badge:"badge-chicken",time:"40 min",servings:"4",cholesterol:"Moderate",calories:"~430 per serving",ingredients:["3 boneless chicken thighs, diced","1 cup frozen peas","2 carrots, diced small","2 stalks celery, diced","3 garlic cloves, minced","2 cups low-sodium chicken broth","2 tbsp flour","1 tbsp olive oil","1 tsp dried thyme","Biscuits or crusty bread"],steps:["Brown diced chicken over medium-high 5–6 min. Remove.","Cook carrots and celery 4–5 min. Add garlic 1 min. Sprinkle flour, cook 1 min.","Pour in broth while stirring. It will thicken quickly.","Return chicken and add peas. Simmer 5 min.","Serve in bowls with bread for scooping."],link:"https://www.halfbakedharvest.com/skillet-chicken-pot-pie/",linkLabel:"Half Baked Harvest"},
+  {title:"Shrimp Cauliflower Fried Rice",category:"Seafood",badge:"badge-seafood",time:"25 min",servings:"3",cholesterol:"Heart-friendly",calories:"~310 per serving",ingredients:["1 lb shrimp, peeled","12 oz frozen cauliflower rice","3 eggs","4 garlic cloves, minced","2 tbsp low-sodium soy sauce","1 tbsp sesame oil","1 tbsp olive oil","2 green onions, sliced","Red pepper flakes"],steps:["Cook cauliflower rice with a little oil until dry and golden, ~5 min. Set aside.","Scramble eggs in pan until just set. Chop roughly.","Add oil and garlic, sauté 30 sec. Add shrimp, cook 1–2 min per side.","Return cauliflower and eggs. Add soy sauce and sesame oil. Toss on high 2 min.","Top with green onions."],link:"https://www.skinnytaste.com/cauliflower-fried-rice-shrimp/",linkLabel:"Skinnytaste"},
+  {title:"Halibut with Garlic Broccoli",category:"Seafood",badge:"badge-seafood",time:"25 min",servings:"2",cholesterol:"Heart-friendly",calories:"~285 per serving",ingredients:["2 halibut fillets (6 oz each)","2 cups broccoli florets","5 garlic cloves, thinly sliced","2 tbsp olive oil","1 tsp low-sodium soy sauce","1 lemon","¼ tsp red pepper flakes"],steps:["Pat halibut dry and season with salt and pepper.","Sear halibut in 1 tbsp oil over medium-high 3–4 min per side. Set aside.","Add remaining oil, garlic, red pepper flakes. Cook 1 min.","Add broccoli and splash of water. Cover and steam 3–4 min. Add soy sauce.","Plate broccoli, top with halibut, squeeze lemon."],link:"https://www.wellplated.com/pan-seared-halibut/",linkLabel:"Well Plated"},
+  {title:"Lemon Garlic Chicken Thighs",category:"Chicken",badge:"badge-chicken",time:"40 min",servings:"4",cholesterol:"Heart-friendly",calories:"~380 per serving",ingredients:["4 bone-in chicken thighs, skin-on","6 garlic cloves, smashed","1 lemon, sliced","2 tbsp olive oil","1 tsp dried thyme","1 tsp dried rosemary","½ cup low-sodium chicken broth"],steps:["Preheat oven to 425°F. Season chicken with salt, pepper, thyme, rosemary.","Sear skin-side down in oven-safe skillet 5–6 min until deeply golden.","Flip. Add garlic and lemon slices. Pour broth around chicken.","Roast 20–22 min until skin is crisp and juices run clear.","Rest 5 min. Spoon pan juices over the top."],link:"https://www.recipetineats.com/chicken-thighs-lemon-garlic/",linkLabel:"RecipeTin Eats"},
+  {title:"Black Bean Chicken Taco Bowl",category:"Bowl",badge:"badge-bowl",time:"35 min",servings:"3",cholesterol:"High-fiber",calories:"~460 per serving",ingredients:["3 boneless chicken thighs, diced","1 can black beans, rinsed","2 cups cauliflower rice","3 garlic cloves, minced","1 tsp cumin","1 tsp chili powder","½ tsp smoked paprika","1 tbsp olive oil","Salsa, lime, Greek yogurt"],steps:["Season chicken with spices. Cook over medium-high 6–8 min until crispy. Add garlic 1 min.","Add black beans and warm 2–3 min.","Cook cauliflower rice separately.","Build bowls: cauliflower rice, chicken and beans on top.","Add salsa, Greek yogurt, lime squeeze."],link:"https://www.halfbakedharvest.com/chicken-taco-bowls/",linkLabel:"Half Baked Harvest"},
+  {title:"One Pan Chicken & Broccoli",category:"Chicken",badge:"badge-chicken",time:"30 min",servings:"3",cholesterol:"Heart-friendly",calories:"~390 per serving",ingredients:["4 boneless chicken thighs","2 cups broccoli florets","4 garlic cloves, minced","2 tbsp olive oil","2 tbsp low-sodium soy sauce","1 tbsp honey","1 tsp sesame oil","½ tsp red pepper flakes","Steamed rice"],steps:["Cut chicken into large chunks. Season with salt and pepper. Cook over medium-high 6–8 min. Remove.","Whisk soy sauce, honey, sesame oil, red pepper flakes.","Sauté garlic 30 sec. Add broccoli and 2 tbsp water, cover and steam 3–4 min.","Return chicken, pour sauce over, toss on high heat 1–2 min until caramelized.","Serve over rice."],link:"https://damndelicious.net/2014/12/20/one-pan-chicken-broccoli/",linkLabel:"Damn Delicious"},
+
+  // ── NEW FLAVORS ───────────────────────────────────────────────────────────
+  {title:"Chicken Satay with Peanut Sauce",category:"Chicken",badge:"badge-chicken",time:"35 min",servings:"4",cholesterol:"Moderate",calories:"~420 per serving",ingredients:["1.5 lbs boneless chicken thighs, cut into strips","2 tbsp low-sodium soy sauce","1 tbsp sesame oil","1 tsp turmeric","1 tsp garlic powder","Skewers (soaked in water)","For peanut sauce: ⅓ cup natural peanut butter","2 tbsp low-sodium soy sauce","1 tbsp lime juice","1 tbsp honey","1 garlic clove, minced","½ tsp sriracha","3–4 tbsp warm water to thin"],steps:["Marinate chicken strips in soy sauce, sesame oil, turmeric, and garlic powder for 20 min.","Make peanut sauce: whisk all sauce ingredients together, adding water until smooth and pourable. Taste and adjust.","Thread chicken onto skewers.","Grill or cook in a hot skillet 3–4 min per side until cooked through with good char marks.","Serve skewers with peanut sauce for dipping. Great with cucumber slices and rice."],link:"https://www.recipetineats.com/chicken-satay/",linkLabel:"RecipeTin Eats"},
+  {title:"Chicken Teriyaki Bowl",category:"Bowl",badge:"badge-bowl",time:"30 min",servings:"3",cholesterol:"Moderate",calories:"~460 per serving",ingredients:["4 boneless chicken thighs","¼ cup low-sodium soy sauce","2 tbsp honey","1 tbsp rice vinegar","1 tsp sesame oil","3 garlic cloves, minced","1 tsp fresh ginger, grated","1 tbsp olive oil","2 cups cooked white rice","Steamed broccoli or edamame","Sesame seeds & green onions"],steps:["Whisk soy sauce, honey, rice vinegar, sesame oil, garlic, and ginger together.","Pat chicken dry and season with salt & pepper.","Heat olive oil over medium-high. Cook chicken 5–6 min per side until golden and cooked through.","Remove chicken and pour teriyaki sauce into pan. Simmer 2–3 min until slightly thickened.","Slice chicken and toss back in the sauce to coat.","Serve over rice with broccoli. Finish with sesame seeds and green onions."],link:"https://www.recipetineats.com/chicken-teriyaki/",linkLabel:"RecipeTin Eats"},
+  {title:"Bourbon Chicken",category:"Chicken",badge:"badge-chicken",time:"30 min",servings:"4",cholesterol:"Moderate",calories:"~470 per serving",ingredients:["1.5 lbs boneless chicken thighs, diced","3 garlic cloves, minced","1 tsp fresh ginger, grated","⅓ cup low-sodium soy sauce","2 tbsp apple juice or cider","1 tbsp honey","1 tbsp brown sugar","1 tbsp ketchup","¼ tsp red pepper flakes","1 tbsp olive oil","Green onions and rice to serve"],steps:["Whisk soy sauce, apple juice, honey, brown sugar, ketchup, and red pepper flakes in a bowl.","Season chicken with salt & pepper. Heat oil over medium-high.","Cook chicken in a single layer 4–5 min until browned. Stir and cook another 3–4 min.","Add garlic and ginger, cook 1 min.","Pour sauce over chicken. Toss and simmer 3–4 min until sauce thickens and coats everything.","Serve over white rice, topped with sliced green onions."],link:"https://damndelicious.net/2019/02/03/bourbon-chicken/",linkLabel:"Damn Delicious"},
+  {title:"Chicken Fried Rice",category:"Bowl",badge:"badge-bowl",time:"25 min",servings:"4",cholesterol:"Moderate",calories:"~440 per serving",ingredients:["2 boneless chicken thighs, diced small","3 cups cooked day-old rice (cold works best)","3 eggs, beaten","1 cup frozen peas","4 garlic cloves, minced","3 tbsp low-sodium soy sauce","1 tbsp sesame oil","1 tbsp olive oil","3 green onions, sliced","Salt & pepper"],steps:["Season diced chicken with salt & pepper. Cook in oil over high heat 4–5 min until cooked through. Push to the side.","Add eggs and scramble until just set. Break into small pieces and mix with chicken.","Add more oil if needed. Add garlic, stir fry 30 seconds.","Add cold rice. Press down and let it sit 1–2 min to get crispy on the bottom. Toss.","Add frozen peas, soy sauce, and sesame oil. Toss everything together on high heat 2–3 min.","Finish with green onions and serve immediately."],link:"https://www.recipetineats.com/chicken-fried-rice/",linkLabel:"RecipeTin Eats"},
+  {title:"Lighter Chicken Tikka Masala",category:"Chicken",badge:"badge-chicken",time:"45 min",servings:"4",cholesterol:"Moderate",calories:"~480 per serving",ingredients:["1.5 lbs boneless chicken thighs, cubed","½ cup plain Greek yogurt","2 tsp garam masala","1 tsp cumin","1 tsp turmeric","1 tsp paprika","3 garlic cloves, minced","1 tbsp fresh ginger, grated","1 tbsp olive oil","1 can (14 oz) crushed tomatoes","½ cup light coconut milk","1 small onion, diced","Fresh cilantro","Basmati rice or naan to serve"],steps:["Marinate chicken in Greek yogurt, garam masala, cumin, turmeric, paprika, half the garlic, and half the ginger. 20 min minimum.","Heat oil over medium-high. Cook chicken in batches until lightly charred, about 4–5 min. Remove.","In same pan, sauté onion 5 min. Add remaining garlic and ginger, cook 1 min.","Add crushed tomatoes and remaining spices. Simmer 8–10 min until thickened.","Stir in coconut milk and return chicken. Simmer 5 min.","Taste and adjust salt. Garnish with fresh cilantro. Serve over basmati rice."],link:"https://www.halfbakedharvest.com/chicken-tikka-masala/",linkLabel:"Half Baked Harvest"},
+  {title:"Malai Chicken Kebabs",category:"Chicken",badge:"badge-chicken",time:"40 min",servings:"4",cholesterol:"Moderate",calories:"~350 per serving",ingredients:["1.5 lbs boneless chicken thighs, cut into chunks","½ cup plain Greek yogurt","2 oz light cream cheese, softened","4 garlic cloves, minced","1 tbsp fresh ginger, grated","1 tsp cumin","½ tsp cardamom","½ tsp white pepper","½ tsp garam masala","1 tbsp olive oil","Fresh lemon juice","Skewers","Fresh cilantro & onions to serve"],steps:["Blend Greek yogurt, cream cheese, garlic, ginger, cumin, cardamom, white pepper, garam masala, and a pinch of salt until smooth.","Add chicken, coat well. Marinate at least 30 min (overnight is better).","Thread chicken onto skewers, shaking off excess marinade.","Grill or broil on high 4–5 min per side until cooked through with light char marks.","Squeeze fresh lemon over the kebabs.","Serve with sliced onions, fresh cilantro, and naan or rice."],link:"https://www.indianhealthyrecipes.com/malai-kabab/",linkLabel:"Indian Healthy Recipes"},
+  {title:"Turkey Smash Burgers",category:"Chicken",badge:"badge-chicken",time:"20 min",servings:"4",cholesterol:"Heart-friendly",calories:"~410 per serving",ingredients:["1.5 lbs ground turkey (93% lean)","3 garlic cloves, minced","½ tsp onion powder","½ tsp smoked paprika","Salt & pepper","1 tbsp olive oil","4 burger buns","Sliced tomato, lettuce, onion","Low-fat cheese (optional)","Dijon mustard or ketchup"],steps:["Mix ground turkey with garlic, onion powder, paprika, salt & pepper. Don't overwork the meat.","Divide into 4 equal balls. Don't form into patties yet.","Heat a cast iron skillet over high heat with olive oil until smoking.","Place a ball in the pan and immediately smash down with a spatula. Hold for 30 seconds.","Cook 3–4 min until a dark crust forms. Flip once. Add cheese if using.","Cook 2–3 min more until cooked through. Build your burger and serve."],link:"https://www.skinnytaste.com/turkey-burgers/",linkLabel:"Skinnytaste"}
+];
+
+const TWO_WEEKS = 14 * 24 * 60 * 60 * 1000;
+const STORAGE = { passed: 'rg_passed', saved: 'rg_saved', buffer: 'rg_buffer' };
+
+let state = { passed: [], saved: [], buffer: [], history: [], histIdx: -1, generating: false };
+
+function loadState() {
+  try {
+    state.passed = JSON.parse(localStorage.getItem(STORAGE.passed) || '[]');
+    state.saved  = JSON.parse(localStorage.getItem(STORAGE.saved)  || '[]');
+    state.buffer = JSON.parse(localStorage.getItem(STORAGE.buffer) || '[]');
+  } catch(e) {}
+}
+
+function persist() {
+  try {
+    localStorage.setItem(STORAGE.passed, JSON.stringify(state.passed));
+    localStorage.setItem(STORAGE.saved,  JSON.stringify(state.saved));
+    localStorage.setItem(STORAGE.buffer, JSON.stringify(state.buffer.slice(0, 40)));
+  } catch(e) {}
+}
+
+function activePassed()  { return state.passed.filter(p => p.passedAt > Date.now() - TWO_WEEKS); }
+function passedTitles()  { return activePassed().map(p => p.title); }
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function filterBuffer() {
+  const pt = new Set(passedTitles());
+  state.buffer = state.buffer.filter(r => !pt.has(r.title));
+}
+
+function seedBuffer() {
+  const skip = new Set([
+    ...passedTitles(),
+    ...state.buffer.map(r => r.title),
+    ...state.history.map(r => r.title)
+  ]);
+  const available = SEEDS.filter(r => !skip.has(r.title));
+  state.buffer.push(...shuffleArray(available));
+}
+
+async function generateMore() {
+  if (state.generating) return;
+  state.generating = true;
+  setStatus('spinner', 'Generating new recipes…');
+
+  const skip = [
+    ...passedTitles(),
+    ...state.buffer.map(r => r.title),
+    ...state.history.slice(-25).map(r => r.title)
+  ];
+
+  try {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skipTitles: [...new Set(skip)] })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      if (res.status === 401 || (err.error && err.error.includes('API key'))) {
+        document.getElementById('api-warning').style.display = 'block';
+      }
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (data.recipes && data.recipes.length > 0) {
+      state.buffer.push(...data.recipes);
+      persist();
+    } else {
+      seedBuffer(); persist();
+    }
+  } catch(e) {
+    console.warn('Generation failed:', e.message);
+    seedBuffer(); persist();
+  }
+
+  state.generating = false;
+  setStatus('', '');
+  if (state.histIdx === -1 && state.buffer.length > 0) advance();
+}
+
+function setStatus(type, text) {
+  const el = document.getElementById('status-row');
+  el.innerHTML = type === 'spinner'
+    ? `<div class="spinner"></div><span class="status-text">${text}</span>`
+    : '';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function advance() {
+  filterBuffer();
+  if (state.buffer.length === 0) {
+    if (!state.generating) seedBuffer();
+    if (state.buffer.length === 0) {
+      const el = document.getElementById('cooldown-notice');
+      el.style.display = 'block';
+      el.textContent = '⏳ All available recipes are on cooldown. Check the Passed tab to clear some early, or check back in a few days.';
+      return;
+    }
+  }
+  document.getElementById('cooldown-notice').style.display = 'none';
+  const next = state.buffer.shift();
+  state.history.push(next);
+  state.histIdx = state.history.length - 1;
+  persist();
+  if (state.buffer.length < 5) generateMore();
+  renderCard();
+  updatePrevBtn();
+}
+
+function showNext() {
+  if (state.histIdx < state.history.length - 1) {
+    state.histIdx++;
+    renderCard();
+    updatePrevBtn();
+  } else {
+    advance();
+  }
+}
+
+function showPrev() {
+  if (state.histIdx > 0) {
+    state.histIdx--;
+    renderCard();
+    updatePrevBtn();
+  }
+}
+
+function updatePrevBtn() {
+  document.getElementById('prev-btn').disabled = state.histIdx <= 0;
+}
+
+function passRecipe() {
+  const r = state.history[state.histIdx];
+  if (!r) return;
+  state.passed = state.passed.filter(p => p.title !== r.title);
+  state.passed.push({ title: r.title, passedAt: Date.now() });
+  state.buffer = state.buffer.filter(b => b.title !== r.title);
+  persist();
+  showToast(`"${r.title}" — back in 2 weeks 👋`);
+  showNext();
+}
+
+function toggleSave() {
+  const r = state.history[state.histIdx];
+  if (!r) return;
+  const idx = state.saved.findIndex(s => s.title === r.title);
+  if (idx >= 0) { state.saved.splice(idx, 1); showToast('Removed from saved'); }
+  else { state.saved.push(r); showToast('❤️ Saved!'); }
+  persist();
+  renderCard();
+  updateSavedBadge();
+}
+
+function removeFromSaved(title) {
+  state.saved = state.saved.filter(s => s.title !== title);
+  persist(); renderSaved(); updateSavedBadge(); renderCard();
+}
+
+function unpassRecipe(title) {
+  state.passed = state.passed.filter(p => p.title !== title);
+  persist(); renderPassed(); seedBuffer();
+  showToast(`"${title}" is back in rotation`);
+}
+
+function jumpToRecipe(title) {
+  const idx = state.history.findIndex(r => r.title === title);
+  if (idx >= 0) {
+    state.histIdx = idx;
+    switchTab('browse', document.getElementById('tab-browse'));
+    renderCard(); updatePrevBtn();
+  }
+}
+
+function updateSavedBadge() {
+  document.getElementById('saved-badge').textContent = state.saved.length > 0 ? `(${state.saved.length})` : '';
+}
+
+const CHOL = {
+  'Heart-friendly': { bg: '#E8F5E9', fg: '#2E7D32' },
+  'High-fiber':     { bg: '#E3F2FD', fg: '#1565C0' },
+  'Moderate':       { bg: '#FFF8E1', fg: '#F57F17' }
+};
+const ICON = { Chicken: '🍗', Seafood: '🐟', Pasta: '🍝', Bowl: '🥣' };
+
+function renderCard() {
+  const r = state.history[state.histIdx];
+  if (!r) return;
+  const saved = state.saved.some(s => s.title === r.title);
+  const cc = CHOL[r.cholesterol] || CHOL['Moderate'];
+
+  document.getElementById('card').innerHTML = `
+    <button class="heart-btn ${saved ? 'saved' : ''}" onclick="toggleSave()">${saved ? '❤️' : '🤍'}</button>
+    <div class="card-header">
+      <div class="category-badge ${r.badge}">${ICON[r.category] || '🍽️'} ${r.category}</div>
+      <h2 class="recipe-title">${r.title}</h2>
+      <div class="recipe-meta">
+        <span>⏱ ${r.time}</span>
+        <span>🍽 ${r.servings} servings</span>
+        ${r.calories ? `<span class="meta-cal">🔥 ${r.calories}</span>` : ''}
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="section-label">Ingredients</div>
+      <div class="ingredients-grid">
+        ${r.ingredients.map(i => `<div class="ingredient-item"><div class="dot"></div><span>${i}</span></div>`).join('')}
+      </div>
+      <hr class="div-line">
+      <div class="section-label">Instructions</div>
+      <ol class="steps-list">
+        ${r.steps.map((s, i) => `<li class="step"><div class="step-num">${i+1}</div><span>${s}</span></li>`).join('')}
+      </ol>
+    </div>
+    <div class="card-footer">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span class="chol-tag" style="background:${cc.bg};color:${cc.fg};">❤️ ${r.cholesterol}</span>
+        <a class="recipe-link" href="${r.link}" target="_blank">↗ ${r.linkLabel}</a>
+      </div>
+      <span style="font-size:12px;color:#bbb;">${saved ? '❤️ Saved' : 'Tap ❤️ to save'}</span>
+    </div>`;
+}
+
+function renderSaved() {
+  const c = document.getElementById('saved-container');
+  if (!state.saved.length) {
+    c.innerHTML = `<div class="empty"><div class="icon">🤍</div><p>No saved recipes yet.<br>Browse and tap the heart to save ones you love.</p></div>`;
+    return;
+  }
+  c.innerHTML = `<div class="saved-grid">
+    ${state.saved.map(r => `
+      <div class="saved-card">
+        <span class="category-badge ${r.badge}" style="font-size:10px;margin:0;">${ICON[r.category] || ''} ${r.category}</span>
+        <div class="saved-card-title">${r.title}</div>
+        <div class="saved-card-meta">⏱ ${r.time} · ${r.calories || ''}</div>
+        <div class="saved-actions">
+          <button class="view-btn" onclick="jumpToRecipe('${r.title.replace(/'/g,"\\'")}')">View →</button>
+          <button class="remove-btn" onclick="removeFromSaved('${r.title.replace(/'/g,"\\'")}')">Remove</button>
+        </div>
+      </div>`).join('')}
+  </div>`;
+}
+
+function renderPassed() {
+  const c = document.getElementById('passed-container');
+  const active = activePassed();
+  if (!active.length) {
+    c.innerHTML = `<div class="empty"><div class="icon">👋</div><p>No passed recipes right now.<br>Recipes you pass will rest here for 2 weeks before coming back.</p></div>`;
+    return;
+  }
+  const daysLeft = ts => {
+    const d = Math.ceil((ts + TWO_WEEKS - Date.now()) / 86400000);
+    return d <= 1 ? 'Back tomorrow' : `Back in ${d}d`;
+  };
+  c.innerHTML = `
+    <p style="font-size:13px;color:#aaa;margin-bottom:12px;">Recipes on cooldown — auto-return after 2 weeks, or clear them early.</p>
+    <div class="passed-grid">
+      ${active.map(p => `
+        <div class="passed-pill">
+          <div class="passed-title" title="${p.title}">${p.title}</div>
+          <div class="passed-meta">
+            <span class="passed-days">${daysLeft(p.passedAt)}</span>
+            <button class="unpass-btn" onclick="unpassRecipe('${p.title.replace(/'/g,"\\'")}')">Clear ✕</button>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + tab).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (tab === 'saved') renderSaved();
+  if (tab === 'passed') renderPassed();
+}
+
+// Init
+loadState();
+filterBuffer();
+
+if (state.history.length > 0) {
+  state.histIdx = state.history.length - 1;
+  renderCard(); updatePrevBtn();
+  if (state.buffer.length < 5) generateMore();
+} else {
+  if (state.buffer.length === 0) seedBuffer();
+  advance();
+  generateMore();
+}
+
+updateSavedBadge();
+</script>
+</body>
+</html>
